@@ -6,7 +6,7 @@ library(rpart)
 library(rpart.plot)
 library(xgboost)
 library(ggplot2)
-df=read.csv("C:/Users/naren/OneDrive/Desktop/KD/Coursework/airbnb data/listings/listings - final.csv",header=TRUE)
+df=read.csv("C:/Users/M01092206/Downloads/Airbnb Course work/listings - final.csv")
 View(df)
 dim(df)
 str(df)
@@ -24,7 +24,7 @@ df$instant_bookable_flag =as.numeric(df$instant_bookable == "t")
 cols_for_target_check=c("review_scores_rating","reviews_per_month")
 df=df[!apply(is.na(df[,cols_for_target_check]),1,all),]
 df=df[!is.na(df$host_acceptance_rate),]
-################################### Outlier Capping#########################################
+################################################################ Outlier Capping#######################################################
 cap_by_iqr=function(x) {
   if (!is.numeric(x)) x=suppressWarnings(as.numeric(as.character(x)))
   if (all(is.na(x))) return(x)
@@ -44,7 +44,7 @@ cols_to_cap <- c("host_listings_count","bedrooms","beds","minimum_nights","maxim
   "minimum_nights_avg_ntm","maximum_nights_avg_ntm","number_of_reviews",
   "calculated_host_listings_count_entire_homes","calculated_host_listings_count_private_rooms","bathrooms_num_raw")
 df <- df %>% mutate(across(all_of(cols_to_cap), cap_by_iqr))
-############################################ NA Value Imputation ######################
+################################################################ NA Value Imputation ##################################################
 get_mode=function(x,na.rm=FALSE) {
   if (na.rm) {x=x[!is.na(x)]}
   freq=table(x)
@@ -66,7 +66,7 @@ cols_to_impute_mean=c("review_scores_rating","review_scores_cleanliness","review
 for (col in cols_to_impute_median) {df[[col]]=impute_median(df[[col]])}
 for (col in cols_to_impute_mean) {df[[col]]=impute_mean(df[[col]])}
 for (col in cols_to_impute_mode) {df[[col]]=impute_mode(df[[col]])}
-################################### Bedrooms Filling #######################################
+################################################################ Bedrooms Filling #####################################################
 df$bathrooms_scaled=normalize(df$bathrooms_num_raw)
 df$price_scaled=normalize(df$price)
 df$accommodates_scaled=normalize(df$accommodates)
@@ -79,7 +79,7 @@ y_train=df_complete$bedrooms
 X_test =as.matrix(df_complete[features])
 y_test =df_complete$bedrooms
 set.seed(123) 
-model=xgboost(data=X_train,label=y_train,nrounds=4000,objective="reg:squarederror",verbose=0)
+model=xgboost(data=X_train,label=y_train,nrounds=4500,objective="reg:squarederror",verbose=0)
 pred_test=predict(model,X_test)
 mse=mean((y_test - pred_test)^2)
 r2 =1 - sum((y_test - pred_test)^2)/sum((y_test - mean(y_test))^2)
@@ -88,7 +88,7 @@ cat("Test R² (XGBoost Bedrooms):",r2,"\n")
 X_missing=as.matrix(df_missing[features])
 pred_missing=predict(model,X_missing)
 df$bedrooms[is.na(df$bedrooms)]=round(pred_missing)
-################################ Formula ###################################################
+#################################################################### Formula ############################################################
 df$value_density=df$price/df$accommodates
 df$avg_review_score=rowMeans(df[,c("review_scores_rating","review_scores_cleanliness","review_scores_value",
                                    "review_scores_value","review_scores_location","review_scores_communication",
@@ -106,7 +106,7 @@ df$quality_host_score=(df$norm_guest_satisfaction + df$norm_response + df$norm_a
 df$success_score=(0.5 * df$demand_value_score) + (0.5 * df$quality_host_score)
 success_threshold=quantile(df$success_score,0.75,na.rm=TRUE)
 df$listing_success=factor( ifelse(df$success_score >= success_threshold,"Good","Bad"),levels=c("Bad","Good"))
-################################ Prepare Remaining Data ####################################
+############################################################# Prepare Remaining Data #####################################################
 df$is_shared_bath=as.numeric(str_detect(df$bathrooms_text,"shared|Shared"))
 df$num_bathrooms=df$bathrooms_num_raw
 top_amenities=c("Wifi","Kitchen","Essentials","Heating","Washer","Dryer","Air conditioning","Smoke alarm","Carbon monoxide alarm","Free parking")
@@ -133,7 +133,7 @@ df_final_model=df %>%
     has_availability=as.factor(has_availability),
     room_type=as.factor(room_type),
     neighbourhood_cleansed=as.factor(neighbourhood_cleansed))
-####################################### Hypotheses Making ###################################
+#################################################################### Hypotheses Making #####################################################
 tab <- table(df$verification_count, df$listing_success)
 prop_tab <- prop.table(tab, margin = 1)
 df_summary <- as.data.frame(prop_tab)
@@ -149,7 +149,7 @@ colnames(df_summary) <- c("room_type", "listing_success", "proportion")
 ggplot(df_summary, aes(x = room_type, y = proportion, fill = listing_success)) +
   geom_bar(stat = "identity", position = "dodge") +scale_y_continuous(labels = scales::percent_format()) +
   labs(title = "Proportion of Good vs Bad Listings by Room Type",x = "Room Type",y = "Proportion") +theme_minimal()
-######################################## Modelling #########################################
+##################################################################### Modelling #############################################################
 set.seed(42)
 trainIndex=createDataPartition(df_final_model$listing_success,p=0.8,list=FALSE)
 train_dirty=df_final_model[trainIndex,]
@@ -163,7 +163,7 @@ training_data_balanced$listing_success=factor(training_data_balanced$listing_suc
 test_final$listing_success=factor(test_final$listing_success,levels=c("Bad","Good"))
 print(table(training_data_balanced$listing_success))
 print(table(test_final$listing_success))
-#################################### Logistic regression ###################################
+################################################################# Logistic regression ########################################################
 model_formula_all=listing_success ~ .
 glm_model_balanced=glm(model_formula_all,data =training_data_balanced,family="binomial")
 glm_pred_prob_balanced=predict(glm_model_balanced,newdata=test_final,type   ="response")
@@ -185,7 +185,7 @@ best_by_acc=results[which.max(results$Accuracy),]
 print(best_by_f1)
 print(best_by_acc)
 summary(glm_model_balanced)
-################################### Decision Tree#########################################
+################################################################ Decision Tree#################################################################
 trControl=trainControl(method="cv",number=5,classProbs=TRUE,summaryFunction=twoClassSummary)
 tree_model_final=train(model_formula_all,data=training_data_balanced,method="rpart",
                        trControl=trControl,tuneLength=20,metric="ROC",control=rpart.control(minsplit=20,minbucket=7,maxdepth=12))
