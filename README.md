@@ -1,86 +1,87 @@
-# 📈 Airbnb Listing Success Predictor: Applied Data Science MSc Challenge (London Data)
+# 📈 Airbnb Listing Success Predictor
+### Applied Data Science | MSc Coursework (London Dataset)
 
+<p align="center">
+<img src="https://img.shields.io/badge/R-Language-276DC3?style=for-the-badge&logo=r">
+<img src="https://img.shields.io/badge/XGBoost-Imputation-111111?style=for-the-badge">
+<img src="https://img.shields.io/badge/Model-Decision%20Tree%20%26%20GLM-CC0000?style=for-the-badge">
+<img src="https://img.shields.io/badge/Accuracy-73.48%25-green?style=for-the-badge">
+<img src="https://img.shields.io/badge/Data-London%20Airbnb-FF5A5F?style=for-the-badge&logo=airbnb">
+</p>
+
+---
 
 ## 🌟 Project Overview
 
-This repository contains the complete workflow for my **Applied Data Science MSc Coursework**, focusing on predicting the success of Airbnb listings in London. The project follows the full data science lifecycle, from **advanced feature engineering** to **model interpretation** using specific business-driven metrics.
+This repository features a complete end-to-end data science workflow designed to predict the success of Airbnb listings in London. By applying advanced feature engineering and machine learning interpretation, the project identifies the "Top 25%" high-performing listings (defined as **'Good Listings'**).
 
-**Goal:** Build a robust classification model to estimate a listing's probability of being a **'Good Listing'** (defined as a top 25% performer).
-
-**Key Technologies:** R (dplyr, caret, rpart, pROC), Advanced XGBoost Imputation.
+**The Challenge:** Navigate high missing-data rates and complex feature interactions to provide actionable business intelligence for property hosts.
 
 ---
 
 ## 🎯 Methodology: Defining Success
 
-The project's foundation is a highly defensible **Composite Success Score ($\mathbf{S_i}$)** that balances business goals and customer satisfaction.
+We established a **Composite Success Score ($S_i$)** to balance commercial performance with guest satisfaction:
 
-$$\mathbf{S_i} = 0.5 \times \text{Normalized}(\text{Demand and Value Score}) + 0.5 \times \text{Normalized}(\text{Quality and Host Score})$$
+$$S_i = 0.5 \times \text{Normalized}(\text{Demand/Value}) + 0.5 \times \text{Normalized}(\text{Quality/Host})$$
 
-| Component | Perspective | Original Column(s) Used | Custom Derived Feature |
-| :--- | :--- | :--- | :--- |
-| **Demand & Value ($\mathbf{DS_i}$)** | **Business & Host** | $\text{availability 365, price, accommodates}$ | $\mathbf{\text{Booking Rate Proxy}}$ and $\mathbf{\text{Value Density}}$ ($\text{price} / \text{accommodates}$). |
-| **Quality & Host ($\mathbf{QS_i}$)** | **Customer** | $\text{review scores rating, host acceptance rate, host is superhost}$ | $\mathbf{\text{Avg Review Score}}$ ($\text{3 scores}$) and $\mathbf{\text{Host Status Premium}}$. |
 
-The final classification of **'Good'** was set at the **75th Percentile** of this composite score.
+
+### Score Components
+| Component | Focus | Custom Derived Features |
+| :--- | :--- | :--- |
+| **Demand & Value ($DS_i$)** | **Commercial** | Booking Rate Proxy, Value Density (Price/Accomm) |
+| **Quality & Host ($QS_i$)** | **Experience** | Avg Review Score (3-score aggregate), Host Premium Status |
 
 ---
 
-## 🛠️ Data Preparation and Engineering Excellence
+## 🛠️ Data Engineering Excellence
 
-Data cleaning and engineering were the most challenging and innovative parts of this project, focusing on quality and maximizing data retention.
+### 1️⃣ Advanced Missing Data Handling
+* **High-Retention Imputation:** Instead of discarding **17,000+** rows with missing `bedrooms`, I utilized an **XGBoost Regressor** ($R^2 = 0.904$) to predict counts based on price, beds, and bathrooms.
+* **Impact:** Preserved **~35%** of the original dataset that would have otherwise been lost.
 
-### 1. Advanced Missing Data Handling
-
-* **Initial Cleanup:** I manually dropped $\mathbf{30}$ noisy/irrelevant columns (e.g., all $\text{URLs, descriptions, messy location data}$ and $\text{availability 30/60/90}$) to focus the model.
-* **XGBoost Imputation:** Instead of losing over $\mathbf{17,000}$ rows with missing $\text{bedrooms}$, I used a supervised **XGBoost Regressor** to accurately predict these $\text{NA}$ values based on property size proxies ($\text{price, beds, bathrooms}$). This advanced technique preserved $\mathbf{\sim 35\%}$ of my original data.
-    * *Resulting Imputation Accuracy:* $\mathbf{R² = 0.904}$
-
-### 2. Feature Creation & Imbalance Solution
-
-* **Final Predictors:** I engineered crucial features like $\mathbf{\text{host tenure days}}$, $\mathbf{\text{review recency days}}$, $\mathbf{\text{verification count}}$, and $\mathbf{10\ binary\ amenity\ flags}$ (e.g., $\text{has dryer, has wifi}$).
-* **Target Balancing:** The final dataset had a $\mathbf{3:1}$ imbalance ($\text{Bad}$ vs. $\text{Good}$). I implemented **Undersampling** to create a balanced $\mathbf{1:1}$ training set, ensuring my models focused equally on correctly identifying the high-value 'Good' listings.
+### 2️⃣ Feature Creation & Balancing
+* **Engineered Predictors:** Created `host_tenure_days`, `review_recency`, `verification_count`, and **10 binary amenity flags**.
+* **Target Balancing:** Addressed a **3:1 imbalance** via **Undersampling**, creating a robust 1:1 balanced training set for model stability.
 
 ---
 
 ## 📊 Modeling and Interpretation
 
-The models were strategically chosen to meet both prediction and interpretation goals. Both were trained on the $\mathbf{1:1}$ balanced dataset.
+The strategy utilized two distinct models: one for **Maximum Prediction** and one for **Human Interpretation**.
 
-## 4. 📈 Final Model Performance Comparison
+### 📈 Model Performance Comparison
 
-The models were trained on the balanced $\mathbf{1:1}$ dataset to ensure they could accurately predict the 'Good' (minority) class. The evaluation confirms the superior generalized performance of the Decision Tree for this specific classification task.
-
-| Model | Final Role | Balanced Accuracy | AUC-ROC | Specificity ('Good' Prediction Rate) |
+| Model | Role | Balanced Accuracy | AUC-ROC | Specificity |
 | :--- | :--- | :--- | :--- | :--- |
-| **Optimized Decision Tree** ($\text{rpart}$) | **Final Predictive Model** | $\mathbf{73.48\%}$ | $\mathbf{0.7747}$ | $\mathbf{75.74\%}$ |
-| **Optimized Logistic Regression** ($\text{glm}$) | **Interpretive Model** | $71.04\%$ | $0.7743$ | $78.54\%$ |
-
-### Model Selection Rationale
-
-The **Optimized Decision Tree** is selected as the primary predictive model for deployment because it achieved the highest **Balanced Accuracy** ($73.48\%$) and **AUC-ROC** ($0.7747$). This means it is the most effective at identifying both low and high-performing listings equally.
-
-The **Optimized Logistic Regression** is kept as the essential **interpretive model**. Its coefficients provide the clear, direct $\mathbf{\beta}$ values necessary for generating specific, actionable advice to hosts (e.g., "Increase the log-odds of success by $27\%$ by adding a dryer").
-
-### 2. Actionable Insights
-
-The model coefficients revealed the exact levers for host success:
-
-1.  **Demand Dominates:** $\mathbf{\text{booking rate proxy}}$ is the single most powerful positive predictor.
-2.  **Service is Priceless:** Offering $\mathbf{\text{Dryer}}$ and having $\mathbf{\text{Air\ Conditioning}}$ (high $\beta$ coefficients) significantly increases success likelihood.
-3.  **Consistency Matters:** High $\mathbf{\text{review recency days}}$ (time since last review) is the biggest negative predictor, confirming that continuous host engagement is essential.
-
-### 3. Business Rule (Decision Tree)
-
-The Decision Tree provides a simple path to success: $\mathbf{\text{High Occupancy}}$ $\rightarrow$ $\mathbf{\text{Proven Track Record}}$ $\rightarrow$ $\mathbf{\text{Success}}$.
+| **Optimized Decision Tree** | **Primary Predictor** | **73.48%** | **0.7747** | **75.74%** |
+| **Logistic Regression (GLM)** | **Interpretive Engine** | 71.04% | 0.7743 | 78.54% |
 
 ---
 
-## 🚀 Productization and Next Steps 
+## 🔍 Actionable Insights
 
-This project is ready for deployment as an automated tool called **The Airbnb Doctor**.
+Based on the **GLM Coefficients ($\beta$)**, the following levers directly influence listing success:
 
-**Deployment Plan:**
-1.  **Model:** Deploy the $\mathbf{\text{Optimized Decision Tree}}$ model.
-2.  **Functionality:** A host provides their listing details, and the tool returns a $\mathbf{\text{Predicted Success Score}}$.
-3.  **Value:** The system uses the $\mathbf{\text{GLM coefficients}}$ to generate specific, actionable advice (e.g., "Your success probability is $\mathbf{60\%}$. To reach $75\%$, our analysis suggests $\mathbf{\text{getting your Host Identity Verified}}$ and $\mathbf{\text{adding an Essentials amenity}}$").
+1. **Demand Dominance:** The `booking_rate_proxy` is the single strongest indicator of a "Good" listing.
+2. **The "Amenity Premium":** Adding a **Dryer** or **Air Conditioning** significantly shifts the log-odds of success.
+3. **Engagement Gap:** High `review_recency` (long gaps between reviews) is the most aggressive negative predictor.
+
+---
+
+## 🚀 Productization: "The Airbnb Doctor"
+
+This project is architected for deployment as a diagnostic tool for hosts:
+
+* **Input:** Host provides listing metadata (amenities, price, frequency).
+* **Process:** The **Decision Tree** classifies the listing; the **GLM** identifies specific weaknesses.
+* **Output:** A personalized "Success Roadmap" (e.g., *"Your success probability is 60%. Add 'Essentials' and verify your identity to reach 75%"*).
+
+---
+
+## 👨‍💻 Author
+
+**Narendra Gandikota (G‑Narendra)** Applied Data Science | ML | Python | R | GenAI Specialist  
+
+GitHub: [https://github.com/G-Narendra](https://github.com/G-Narendra)
